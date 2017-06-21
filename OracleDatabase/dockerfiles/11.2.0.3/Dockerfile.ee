@@ -30,7 +30,7 @@ MAINTAINER Gerald Venzl <gerald.venzl@oracle.com>
 # Environment variables required for this build (do NOT change)
 # -------------------------------------------------------------
 ENV ORACLE_BASE=/opt/oracle \
-    ORACLE_HOME=/opt/oracle/product/11.2.0.2/dbhome_1 \
+    ORACLE_HOME=/opt/oracle/product/11.2.0.3/dbhome_1 \
     INSTALL_FILE_1="linux.x64_11gR2_database_1of2.zip" \
     INSTALL_FILE_2="linux.x64_11gR2_database_2of2.zip" \
     INSTALL_RSP="db_inst.rsp" \
@@ -42,7 +42,8 @@ ENV ORACLE_BASE=/opt/oracle \
     CREATE_DB_FILE="createDB.sh" \
     SETUP_LINUX_FILE="setupLinuxEnv.sh" \
     CHECK_SPACE_FILE="checkSpace.sh" \
-    INSTALL_DB_BINARIES_FILE="installDBBinaries.sh"
+    INSTALL_DB_BINARIES_FILE="installDBBinaries.sh" \
+    HTTPSERVER="http://192.168.0.102:8000"
 
 # Use second ENV so that variable get substituted
 ENV INSTALL_DIR=$ORACLE_BASE/install \
@@ -52,17 +53,30 @@ ENV INSTALL_DIR=$ORACLE_BASE/install \
 
 # Copy binaries
 # -------------
-COPY $INSTALL_FILE_1 $INSTALL_FILE_2 $INSTALL_RSP $PERL_INSTALL_FILE $SETUP_LINUX_FILE $CHECK_SPACE_FILE $INSTALL_DB_BINARIES_FILE $INSTALL_DIR/
-COPY $RUN_FILE $START_FILE $CREATE_DB_FILE $CONFIG_RSP $PWD_FILE $ORACLE_BASE/
+COPY $RUN_FILE $START_FILE $CREATE_DB_FILE $PWD_FILE $CONFIG_RSP $ORACLE_BASE/
 
-RUN chmod ug+x $INSTALL_DIR/*.sh && \
+RUN yum -y install wget unzip tar && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$CHECK_SPACE_FILE && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$SETUP_LINUX_FILE && \
+    chmod ug+x $INSTALL_DIR/*.sh && \
     sync && \
     $INSTALL_DIR/$CHECK_SPACE_FILE && \
-    $INSTALL_DIR/$SETUP_LINUX_FILE
+    $INSTALL_DIR/$SETUP_LINUX_FILE && \
+    rm -rfv $INSTALL_DIR/$CHECK_SPACE_FILE $INSTALL_DIR/$SETUP_LINUX_FILE
 
 # Install DB software binaries
 USER oracle
-RUN $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE EE
+RUN wget -P $INSTALL_DIR $HTTPSERVER/$PERL_INSTALL_FILE && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$INSTALL_RSP && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$INSTALL_FILE_1 && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$INSTALL_FILE_2 && \
+    wget -P $INSTALL_DIR $HTTPSERVER/$INSTALL_DB_BINARIES_FILE && \
+    chmod ug+x $INSTALL_DIR/*.sh && \
+    sync && \
+    $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE EE && \
+    rm -rfv $INSTALL_DIR/$INSTALL_FILE_1 $INSTALL_DIR/$INSTALL_FILE_2 \
+            $INSTALL_DIR/$PERL_INSTALL_FILE $INSTALL_DIR/INSTALL_RSP \
+            $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE 
 
 USER root
 RUN $ORACLE_BASE/oraInventory/orainstRoot.sh && \
@@ -74,6 +88,6 @@ WORKDIR /home/oracle
 
 VOLUME ["$ORACLE_BASE/oradata"]
 EXPOSE 1521 5500
-    
+
 # Define default command to start Oracle Database. 
 CMD $ORACLE_BASE/$RUN_FILE

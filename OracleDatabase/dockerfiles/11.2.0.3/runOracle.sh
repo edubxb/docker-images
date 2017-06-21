@@ -122,11 +122,6 @@ else
    fi;
 fi;
 
-# Default for ORACLE PDB
-if [ "$ORACLE_PDB" == "" ]; then
-   export ORACLE_PDB=ORCLPDB1
-fi;
-
 # Check whether database already exists
 if [ -d $ORACLE_BASE/oradata/$ORACLE_SID ]; then
    symLinkFiles;
@@ -146,7 +141,7 @@ else
    rm -f $ORACLE_HOME/network/admin/tnsnames.ora
    
    # Create database
-   $ORACLE_BASE/$CREATE_DB_FILE $ORACLE_SID $ORACLE_PDB;
+   $ORACLE_BASE/$CREATE_DB_FILE $ORACLE_SID;
    
    # Move database operational files to oradata
    moveFiles;
