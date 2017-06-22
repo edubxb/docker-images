@@ -8,20 +8,20 @@
 # 
 # REQUIRED FILES TO BUILD THIS IMAGE
 # ----------------------------------
-# (1) linuxamd64_12102_database_1of2.zip
-#     linuxamd64_12102_database_2of2.zip
-#     Download Oracle Database 12c Release 1 Enterprise Edition for Linux x64
+# (1) linux.x64_11gR2_database_1of2.zip
+#     linux.x64_11gR2_database_2of2.zip
+#     Download Oracle Database 11g Release 2 Enterprise Edition for Linux x64
 #     from http://www.oracle.com/technetwork/database/enterprise-edition/downloads/index.html
 #
 # HOW TO BUILD THIS IMAGE
 # -----------------------
 # Put all downloaded files in the same directory as this Dockerfile
 # Run: 
-#      $ docker build -t oracle/database:12.1.0.2-ee . 
+#      $ docker build -t oracle/database:11.2.0.3-ee . 
 #
 # Pull base image
 # ---------------
-FROM oraclelinux:latest
+FROM oraclelinux:7-slim
 
 # Maintainer
 # ----------
@@ -42,6 +42,7 @@ ENV ORACLE_BASE=/opt/oracle \
     CREATE_DB_FILE="createDB.sh" \
     SETUP_LINUX_FILE="setupLinuxEnv.sh" \
     CHECK_SPACE_FILE="checkSpace.sh" \
+    CHECK_DB_FILE="checkDBStatus.sh" \
     INSTALL_DB_BINARIES_FILE="installDBBinaries.sh" \
     HTTPSERVER="http://192.168.0.102:8000"
 
@@ -53,9 +54,9 @@ ENV INSTALL_DIR=$ORACLE_BASE/install \
 
 # Copy binaries
 # -------------
-COPY $RUN_FILE $START_FILE $CREATE_DB_FILE $PWD_FILE $CONFIG_RSP $ORACLE_BASE/
+COPY $RUN_FILE $START_FILE $CREATE_DB_FILE $PWD_FILE $CONFIG_RSP $CHECK_DB_FILE $ORACLE_BASE/
 
-RUN yum -y install wget unzip tar && \
+RUN yum -y install wget unzip tari && \
     wget -P $INSTALL_DIR $HTTPSERVER/$CHECK_SPACE_FILE && \
     wget -P $INSTALL_DIR $HTTPSERVER/$SETUP_LINUX_FILE && \
     chmod ug+x $INSTALL_DIR/*.sh && \
@@ -76,7 +77,7 @@ RUN wget -P $INSTALL_DIR $HTTPSERVER/$PERL_INSTALL_FILE && \
     $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE EE && \
     rm -rfv $INSTALL_DIR/$INSTALL_FILE_1 $INSTALL_DIR/$INSTALL_FILE_2 \
             $INSTALL_DIR/$PERL_INSTALL_FILE $INSTALL_DIR/INSTALL_RSP \
-            $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE 
+            $INSTALL_DIR/$INSTALL_DB_BINARIES_FILE
 
 USER root
 RUN $ORACLE_BASE/oraInventory/orainstRoot.sh && \
@@ -90,4 +91,4 @@ VOLUME ["$ORACLE_BASE/oradata"]
 EXPOSE 1521 5500
 
 # Define default command to start Oracle Database. 
-CMD $ORACLE_BASE/$RUN_FILE
+CMD exec $ORACLE_BASE/$RUN_FILE

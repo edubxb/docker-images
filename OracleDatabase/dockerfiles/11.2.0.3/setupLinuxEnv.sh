@@ -18,10 +18,7 @@ chmod ug+x $ORACLE_BASE/$PWD_FILE && \
 chmod ug+x $ORACLE_BASE/$RUN_FILE && \
 chmod ug+x $ORACLE_BASE/$START_FILE && \
 chmod ug+x $ORACLE_BASE/$CREATE_DB_FILE && \
-groupadd -g 500 dba && \
-groupadd -g 501 oinstall && \
-useradd  -u 500 -d /home/oracle -g dba -G dba,oinstall -m -s /bin/bash oracle && \
-echo oracle:oracle | chpasswd && \
-yum -y install oracle-rdbms-server-11gR2-preinstall libaio openssl && \
+yum -y install oracle-rdbms-server-11gR2-preinstall openssl && \
 yum clean all && \
+echo oracle:oracle | chpasswd && \
 chown -R oracle:dba $ORACLE_BASE
